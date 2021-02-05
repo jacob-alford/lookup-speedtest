@@ -92,10 +92,10 @@ const program: IO.IO<TestResults> = () =>
 
 const showTestResults: Show<TestResults> = {
   show: ({ array: [, array], set: [, set], map: [, map], record: [, record] }) =>
-    `Array average: ${array / NUMBER_OF_TRIALS}ms
-Set average: ${set / NUMBER_OF_TRIALS}ms
-Map Average: ${map / NUMBER_OF_TRIALS}ms
-Record Average: ${record / NUMBER_OF_TRIALS}ms`
+    ` Array average: ${array / NUMBER_OF_TRIALS}ms
+  Set average: ${set / NUMBER_OF_TRIALS}ms
+  Map Average: ${map / NUMBER_OF_TRIALS}ms
+  Record Average: ${record / NUMBER_OF_TRIALS}ms`
 };
 
 console.log(pipe(program(), showTestResults.show));
