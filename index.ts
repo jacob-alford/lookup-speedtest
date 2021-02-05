@@ -19,8 +19,8 @@ import { random } from "fp-ts/lib/Random";
 
 const NUMBER_OF_ITEMS = 100000;
 
-const testArray = Array.from({ length: NUMBER_OF_ITEMS }).map(random);
-const testSet = S.fromArray(Eq.eqNumber)(testArray);
+const testArray = pipe(Array.from({ length: NUMBER_OF_ITEMS }), A.map(random));
+const testSet = pipe(testArray, S.fromArray(Eq.eqNumber));
 const testMap = pipe(
   new Map(
     pipe(
@@ -38,20 +38,21 @@ const testRecord = R.fromFoldableMap(
 const testValue = pipe(
   testArray,
   A.last,
-  O.fold(() => 0, identity)
+  O.fold(() => -1, identity)
 );
 
 const runTestArray: IO.IO<boolean> = () => A.elem(Eq.eqNumber)(testValue)(testArray);
 const runTestSet: IO.IO<boolean> = () => S.elem(Eq.eqNumber)(testValue)(testSet);
 const runTestMap: IO.IO<boolean> = () =>
   pipe(
-    M.lookupWithKey(Eq.eqString)(String(testValue))(testMap),
+    testMap,
+    M.lookupWithKey(Eq.eqString)(String(testValue)),
     O.fold(constFalse, constTrue)
   );
 const runTestRecord: IO.IO<boolean> = () =>
-  pipe(R.lookup(String(testValue))(testRecord), O.fold(constFalse, constTrue));
+  pipe(testRecord, R.lookup(String(testValue)), O.fold(constFalse, constTrue));
 
-const timeTest = (io: IO.IO<boolean>): IO.IO<[boolean, number]> => () => {
+const timeTestK = (io: IO.IO<boolean>): IO.IO<[boolean, number]> => () => {
   const startTime = Date.now();
   const result = io();
   const endTime = Date.now();
@@ -69,10 +70,10 @@ interface TestResults {
 
 const runTest: IO.IO<TestResults> = pipe(
   IO.Do,
-  IO.bind("array", () => timeTest(runTestArray)),
-  IO.bind("set", () => timeTest(runTestSet)),
-  IO.bind("map", () => timeTest(runTestMap)),
-  IO.bind("record", () => timeTest(runTestRecord))
+  IO.bind("array", () => timeTestK(runTestArray)),
+  IO.bind("set", () => timeTestK(runTestSet)),
+  IO.bind("map", () => timeTestK(runTestMap)),
+  IO.bind("record", () => timeTestK(runTestRecord))
 );
 
 const monoidTestResults: Monoid<TestResults> = getStructMonoid({
@@ -92,7 +93,7 @@ const program: IO.IO<TestResults> = () =>
 
 const showTestResults: Show<TestResults> = {
   show: ({ array: [, array], set: [, set], map: [, map], record: [, record] }) =>
-    ` Array average: ${array / NUMBER_OF_TRIALS}ms
+    `  Array average: ${array / NUMBER_OF_TRIALS}ms
   Set average: ${set / NUMBER_OF_TRIALS}ms
   Map Average: ${map / NUMBER_OF_TRIALS}ms
   Record Average: ${record / NUMBER_OF_TRIALS}ms`
