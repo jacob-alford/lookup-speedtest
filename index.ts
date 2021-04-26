@@ -6,6 +6,7 @@ import * as Eq from "fp-ts/lib/Eq";
 import * as O from "fp-ts/lib/Option";
 import * as IO from "fp-ts/lib/IO";
 import { Show } from "fp-ts/lib/Show";
+import now from "performance-now";
 import {
   Monoid,
   getTupleMonoid,
@@ -14,7 +15,7 @@ import {
   monoidSum
 } from "fp-ts/lib/Monoid";
 import { getLastSemigroup } from "fp-ts/lib/Semigroup";
-import { pipe, identity, constFalse, constTrue } from "fp-ts/lib/function";
+import { pipe, identity } from "fp-ts/lib/function";
 import { random } from "fp-ts/lib/Random";
 
 const NUMBER_OF_ITEMS = 100000;
@@ -41,21 +42,15 @@ const testValue = pipe(
   O.fold(() => -1, identity)
 );
 
-const runTestArray: IO.IO<boolean> = () => A.elem(Eq.eqNumber)(testValue)(testArray);
-const runTestSet: IO.IO<boolean> = () => S.elem(Eq.eqNumber)(testValue)(testSet);
-const runTestMap: IO.IO<boolean> = () =>
-  pipe(
-    testMap,
-    M.lookupWithKey(Eq.eqString)(String(testValue)),
-    O.fold(constFalse, constTrue)
-  );
-const runTestRecord: IO.IO<boolean> = () =>
-  pipe(testRecord, R.lookup(String(testValue)), O.fold(constFalse, constTrue));
+const runTestArray: IO.IO<boolean> = () => testArray.includes(testValue);
+const runTestSet: IO.IO<boolean> = () => testSet.has(testValue);
+const runTestMap: IO.IO<boolean> = () => testMap.has(String(testValue));
+const runTestRecord: IO.IO<boolean> = () => pipe(testRecord[String(testValue)], Boolean);
 
 const timeTestK = (io: IO.IO<boolean>): IO.IO<[boolean, number]> => () => {
-  const startTime = Date.now();
+  const startTime = now();
   const result = io();
-  const endTime = Date.now();
+  const endTime = now();
   return [result, endTime - startTime];
 };
 
